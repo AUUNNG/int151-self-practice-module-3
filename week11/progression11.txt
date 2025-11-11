@@ -1,0 +1,1 @@
+ได้เรียนรู้จากปัญหาคือ nginx ไม่ยอม serve css ไป หลังจากที่ไปดูใน console > network ก็พบว่า header content type ไม่ถูกต้อง เลยทำให้รู้จักคำว่า mime เพื่อให้ nginx สามารถแยกได้ว่า อันนี้คือ .css .js หรือ .svg
