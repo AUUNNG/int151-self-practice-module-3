@@ -1,0 +1,36 @@
+```js
+const date = new Date(data.updatedAt || data.createdAt);
+
+```
+func จะรับ data มาแล้วเลือกเวลาล่าสุดมาทำ obj
+
+```js
+const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+```
+ดึงค่า timezone ที่ผู้ใช้อยู่ในขณะนั้น
+
+```js
+const dateStr = date.toLocaleString('en-GB', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+});
+
+```
+นำ date obj มาใช้ toLocaleString() เพื่อแปลงวันที่ให้อยู่ในรูปแบบที่ต้องการ 01/12/2025, 10:30:15
+
+```js
+const lowercase = data.status.toLowerCase();
+const capitalizedString = `${lowercase[0].toUpperCase()}${lowercase.slice(1)}`;
+
+```
+อันนี้ไม่เกี่ยวกับ เวลาเท่าไหร่ครับ แต่เป็นการแปลง status จาก CANCELED ให้เป็นตัวเล็กก่อน canceled จากนั้นก็ ทำให้ string[0] เป็น toUpperCase แล้วก็ slice(1) เอา string ที่เหลือ รู้สึกว่า func นี้ไม่ได้ ออกแบบมาเพื่อทำ "HELLO WORLD" ให้เป็น "Hello World" เพราะน่าจะทำได้ทีลำคำครับ 
+
+```js
+declaredPlanSpan.textContent = `${capitalizedString} ${plan.planCode} - ${plan.nameEng} plan on ${dateStr} (${userTimeZone})`;
+
+```
+เป็นขั้นตอนสุดท้าย เอา string ทั้งหมดนำมาใส่ DOM
+
+หลักๆทั้งหมดนี้ก็ได้เรียนรู้ว่า toLocaleString เป็น func ที่เอาไว้เล่นกับพวก date แล้วก็ทำให้แปลงเวลา หรือแสดงผลตามที่ต้องการ
