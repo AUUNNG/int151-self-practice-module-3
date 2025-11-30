@@ -1,0 +1,184 @@
+Progression Weeks 6 - 10
+------------------------
+
+Week 11
+------------------------
+ได้เรียนรู้จากปัญหาคือ nginx ไม่ยอม serve css ไป หลังจากที่ไปดูใน console > network ก็พบว่า header content type ไม่ถูกต้อง เลยทำให้รู้จักคำว่า mime เพื่อให้ nginx สามารถแยกได้ว่า อันนี้คือ .css .js หรือ .svg
+
+------------------------
+
+Week 12
+------------------------
+ได้เรียนรู้ว่าการทำ github action workflows เพื่อจะทำ CI ในการ deploy ใน VM ซึ่งต้องเชื่อม vpn ต้องทำ secret var ซึ่งทางคณะเราก็ได้เตรียมไฟล์ที่จำเป็นสำหรับต่อ vpn
+
+------------------------
+
+Week 13
+------------------------
+```js
+const date = new Date(data.updatedAt || data.createdAt);
+
+```
+func จะรับ data มาแล้วเลือกเวลาล่าสุดมาทำ obj
+
+```js
+const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+```
+ดึงค่า timezone ที่ผู้ใช้อยู่ในขณะนั้น
+
+```js
+const dateStr = date.toLocaleString('en-GB', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+});
+
+```
+นำ date obj มาใช้ toLocaleString() เพื่อแปลงวันที่ให้อยู่ในรูปแบบที่ต้องการ 01/12/2025, 10:30:15
+
+```js
+const lowercase = data.status.toLowerCase();
+const capitalizedString = `${lowercase[0].toUpperCase()}${lowercase.slice(1)}`;
+
+```
+อันนี้ไม่เกี่ยวกับ เวลาเท่าไหร่ครับ แต่เป็นการแปลง status จาก CANCELED ให้เป็นตัวเล็กก่อน canceled จากนั้นก็ ทำให้ string[0] เป็น toUpperCase แล้วก็ slice(1) เอา string ที่เหลือ รู้สึกว่า func นี้ไม่ได้ ออกแบบมาเพื่อทำ "HELLO WORLD" ให้เป็น "Hello World" เพราะน่าจะทำได้ทีลำคำครับ 
+
+```js
+declaredPlanSpan.textContent = `${capitalizedString} ${plan.planCode} - ${plan.nameEng} plan on ${dateStr} (${userTimeZone})`;
+
+```
+เป็นขั้นตอนสุดท้าย เอา string ทั้งหมดนำมาใส่ DOM
+
+หลักๆทั้งหมดนี้ก็ได้เรียนรู้ว่า toLocaleString เป็น func ที่เอาไว้เล่นกับพวก date แล้วก็ทำให้แปลงเวลา หรือแสดงผลตามที่ต้องการ
+
+------------------------
+
+Week 14
+------------------------
+```js
+function updateReservationStatus(data) {
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const currentStartDate = formatDateTime(data.currentPeriod.startDateTime)
+    const currentEndDate = formatDateTime(data.currentPeriod.endDateTime)
+    const endStartDate = formatDateTime(data.nextPeriod.startDateTime)
+    const endEndDate = formatDateTime(data.nextPeriod.endDateTime)
+
+    // ========== test ==========
+    // 1                            [before current, before next]
+    // 2 2025-11-25T02:00:00.000Z   [current, before next]
+    // 3 2025-11-27T11:00:00.000Z   [current, before next]
+    // 4                            [after current, before next]
+    // 5 2025-11-28T02:00:00.000Z   [after current, next]
+    // 6 2025-12-01T10:00:00.000Z   [after current, next]
+    // 5                            [after current, after next]
+    // ========== test ==========
+
+    const currentTime = new Date(Date.now())
+    const reservationPeriodStart = new Date(data.currentPeriod.startDateTime)
+    const reservationPeriodEnd = new Date(data.currentPeriod.endDateTime)
+    const nextReservationPeriodStart = new Date(data.nextPeriod.startDateTime)
+    const nextReservationPeriodEnd = new Date(data.nextPeriod.endDateTime)
+    let status = null
+
+    if (currentTime >= nextReservationPeriodStart) {
+        if (currentTime <= nextReservationPeriodEnd) {
+            console.log("after current, next");
+            status = "afterCurrentNext"
+        } else {
+            console.log("after current, after next");
+            status = "afterCurrentAfterNext"
+        }
+    } else {
+        if (currentTime <= reservationPeriodEnd) {
+            if (currentTime >= reservationPeriodStart) {
+                console.log("current, before next");
+                status = "currentBeforeNext"
+            } else {
+                console.log("before current, before next");
+                status = "beforeCurrentBeforeNext"
+            }
+        } else {
+            console.log("after current, before next");
+            status = "afterCurrentBeforeNext"
+        }
+    }
+
+    switch (status) {
+        case "beforeCurrentBeforeNext":
+            currentMessage.textContent = "Reservation is closed"
+            currentPeriod.textContent = `Period: ${currentStartDate} — ${currentEndDate} (${userTimeZone})`
+            nextMessage.textContent = "Next reseration period:"
+            nextPeriod.textContent = `Period: ${endStartDate} — ${endEndDate} (${userTimeZone})`
+            declareActions.style.display = "none"
+            declareActions.style.visibility = "hidden";
+            break;
+
+        case "currentBeforeNext":
+            currentMessage.textContent = "Reservation is open"
+            currentPeriod.textContent = `Period: ${currentStartDate} — ${currentEndDate} (${userTimeZone})`
+            nextMessage.textContent = "Next reseration period:"
+            nextPeriod.textContent = `Period: ${endStartDate} — ${endEndDate} (${userTimeZone})`
+            declareActions.style.display = "grid"
+            declareActions.style.visibility = "visible";
+            break;
+
+        case "afterCurrentBeforeNext":
+            currentMessage.textContent = "Reservation is closed"
+            nextMessage.textContent = "Next reseration period:"
+            nextPeriod.textContent = `Period: ${endStartDate} — ${endEndDate} (${userTimeZone})`
+            declareActions.style.display = "none"
+            declareActions.style.visibility = "hidden";
+            break;
+
+        case "afterCurrentNext":
+            currentMessage.textContent = "Reservation is closed"
+            nextMessage.textContent = "Next reseration period:"
+            nextPeriod.textContent = `Period: ${endStartDate} — ${endEndDate} (${userTimeZone})`
+            declareActions.style.display = "grid"
+            declareActions.style.visibility = "visible";
+            break;
+
+        case "afterCurrentAfterNext":
+            currentMessage.textContent = "Reservation is closed"
+            nextMessage.textContent = "There are no upcoming active reservation periods."
+            declareActions.style.display = "none"
+            declareActions.style.visibility = "hidden";
+            break;
+    }
+}
+
+function formatDateTime(data) {
+    const date = new Date(data);
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const dateStr = date.toLocaleString('en-GB', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false, timeZone: userTimeZone
+    });
+    return dateStr
+}
+
+```
+ก่อนอื่นอยากเล่าครับว่า ตรง if (condition) ก่อนหน้านี้ไม่ได้เป็นหน้าตาแบบนี้เละมาก่อน logic ไม่ได้ตามที่ต้องการเป็น condition ยาวๆ แต่ก็ทำไม่ตรงตามที่ต้องการ
+และก็ได้เปลี่ยนรูปแบบการเขียน ลักษณะนี้ ได้จาก อาจารย์ เกรียงไกร สอนครับ และก่อนหน้านี้ก็นำ DOM ยัดเข้าไป ซึ่งรู้สึกว่า maintain ยาก
+จึงแยกมาใส่ใน switch case เพราะรู้สึกว่าในอนาคตนี้จะต้องมีการเล่น DOM เกี่ยวกับเวลามากขึ้น เลยแยกไว้เพื่อรองรับ
+โดย switch case แบ่งเป็น 5 status หลักจากลอง test ก็ได้แบบที่ต้องการครับ
+
+// 1                            [before current, before next]
+// 2 2025-11-25T02:00:00.000Z   [current, before next]
+// 3 2025-11-27T11:00:00.000Z   [current, before next]
+// 4                            [after current, before next]
+// 5 2025-11-28T02:00:00.000Z   [after current, next]
+// 6 2025-12-01T10:00:00.000Z   [after current, next]
+// 5                            [after current, after next]
+
+ณ ตอนนี้ก็ยังอยู่ pbi แรกของ sprint ครับ ยังไม่ได้ไปไหนไกลครับ
+
+------------------------
+
+Week 15
+------------------------
+ที่ผ่านมาผมเอา date obj มาเทียบกันตรงๆเลย แล้วเกิด condition แปลกๆ ก็เลยไปเจอ .getTime() ที่แปลง date obj เป็น Number milisec ก็สามารถเอามาเปรียบเทียบได้ง่ายๆครับ
+
+------------------------
